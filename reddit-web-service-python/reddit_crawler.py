@@ -1,12 +1,7 @@
-import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from bs4 import BeautifulSoup
-
-import requests
-import uuid
-import re
 import time
 
 from selenium import webdriver
@@ -38,7 +33,6 @@ class Post:
     post_author: str
     post_score: str
     media_content: None
-    # timestamp: float = field(default_factory=lambda: datetime.now(timezone.utc).timestamp())
     timestamp: float = field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
 def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Post]:
@@ -126,14 +120,6 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
                     post_title = post_element.get('post-title')
                     post_author = post_element.get('author')
                     post_score_str = post_element.get('score')
-
-                    # print("Unique ID:", unique_id)
-                    # print("Perma link:", perma_link)
-                    # print("Href content:", href_content)
-                    # print("Comment count:", comment_count_str)
-                    # print("Post title:", post_title)
-                    # print("Post author:", post_author)
-                    # print("Post score:", post_score_str)
 
                     media_content = None
                     if href_content and (href_content.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm')) or 'v.redd.it' in href_content):
