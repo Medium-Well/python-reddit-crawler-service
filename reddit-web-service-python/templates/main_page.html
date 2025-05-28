@@ -39,7 +39,18 @@
 </head>
 <body class="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-screen">
 <div class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg w-full">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Reddit Report Generator</h1>
+    <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Reddit Memes Report Generator</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-6">
+        {% for category, message in messages %}
+        <div class="flash-message {{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div class="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">Generate New Report</h2>
@@ -59,8 +70,8 @@
                     </select>
                 </div>
                 <div>
-                    <label for="target_posts" class="block text-sm font-medium text-gray-700 mb-1">Number of Posts (max 100):</label>
-                    <input type="number" id="target_posts" name="target_posts" value="20" min="3" max="100" required
+                    <label for="target_posts" class="block text-sm font-medium text-gray-700 mb-1">Number of Posts (max 50):</label>
+                    <input type="number" id="target_posts" name="target_posts" value="20" min="1" max="50" required
                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <div>
@@ -80,9 +91,12 @@
                 <div class="report-item flex items-center justify-between">
                     <div>
                         <p class="text-gray-900 font-medium">{{ report.timestamp }}</p>
-                        <p class="text-gray-600 text-sm">r/{{ report.subreddit }}/{{ report.sort }} - {{ report.target_posts }} posts</p>
+                        <p class="text-gray-600 text-sm">r/{{ report.subreddit }} ({{ report.sort }}) - {{ report.target_posts }} posts</p>
                     </div>
-                    <a href="{{ url_for('report', filename=report.report_file) }}" target="_blank" class="text-blue-500 hover:text-blue-700 text-sm font-medium">View</a>
+                    <div class="flex space-x-2">
+                        <a href="{{ url_for('view_report', report_id=report.id) }}" target="_blank" class="text-blue-500 hover:text-blue-700 text-sm font-medium">View</a>
+                        <a href="{{ url_for('download_report', report_id=report.id) }}" class="text-green-500 hover:text-green-700 text-sm font-medium">Download</a>
+                    </div>
                 </div>
                 {% endfor %}
                 {% else %}
