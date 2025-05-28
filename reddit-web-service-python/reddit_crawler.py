@@ -41,7 +41,7 @@ class Post:
     # timestamp: float = field(default_factory=lambda: datetime.now(timezone.utc).timestamp())
     timestamp: float = field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
-def crawl_subreddit(subreddit: str, sort: str = "top", target_posts : int = 20) -> list[Post]:
+def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Post]:
     """
         Crawls a subreddit of your choice with a set target of 20 posts to crawl
         these posts are then saved as a Post dataclass
@@ -85,11 +85,11 @@ def crawl_subreddit(subreddit: str, sort: str = "top", target_posts : int = 20) 
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
 
-        driver.set_page_load_timeout(45)
+        driver.set_page_load_timeout(60)
         driver.get(url)
 
         # Wait until at least one 'shreddit-post' element is present
-        WebDriverWait(driver, 20).until(
+        WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "shreddit-post"))
         )
         print("At least one 'shreddit-post' element found. Starting crawl loop.")
@@ -127,13 +127,13 @@ def crawl_subreddit(subreddit: str, sort: str = "top", target_posts : int = 20) 
                     post_author = post_element.get('author')
                     post_score_str = post_element.get('score')
 
-                    print("Unique ID:", unique_id)
-                    print("Perma link:", perma_link)
-                    print("Href content:", href_content)
-                    print("Comment count:", comment_count_str)
-                    print("Post title:", post_title)
-                    print("Post author:", post_author)
-                    print("Post score:", post_score_str)
+                    # print("Unique ID:", unique_id)
+                    # print("Perma link:", perma_link)
+                    # print("Href content:", href_content)
+                    # print("Comment count:", comment_count_str)
+                    # print("Post title:", post_title)
+                    # print("Post author:", post_author)
+                    # print("Post score:", post_score_str)
 
                     media_content = None
                     if href_content and (href_content.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm')) or 'v.redd.it' in href_content):
