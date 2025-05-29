@@ -137,7 +137,6 @@ def bot_polling():
 report_directory = os.path.join(app.root_path, 'reports')
 os.makedirs(report_directory, exist_ok=True)
 
-crawled_posts: list[Post] = []
 all_reports = []
 
 """
