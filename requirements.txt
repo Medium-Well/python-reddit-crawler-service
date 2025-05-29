@@ -1,0 +1,8 @@
+Flask[async]
+requests
+beautifulsoup4
+selenium
+webdriver-manager
+Flask-SQLAlchemy
+python-dotenv
+python-telegram-bot
