@@ -2,18 +2,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from bs4 import BeautifulSoup
+import os
 import time
+import urllib.parse
 
 from selenium import webdriver
-
-from selenium.webdriver.edge.service import Service
-from selenium.webdriver.edge.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
-
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
-from webdriver_manager.firefox import GeckoDriverManager
 
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -23,6 +17,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import WebDriverException, TimeoutException, NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC
 
+# ----------------------------------------------------------------------------------------- #
+# Post dataclass for crawling use
 @dataclass
 class Post:
     unique_id: str
@@ -35,6 +31,8 @@ class Post:
     media_content: None
     timestamp: float = field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
+# ----------------------------------------------------------------------------------------- #
+# Main crawling function - takes in parameters such as subreddit name, sort by and how many to crawl
 def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Post]:
     """
         Crawls a subreddit of your choice with a set target of 20 posts to crawl
@@ -42,25 +40,8 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
     """
     url = f"https://www.reddit.com/r/{subreddit}/{sort}" # allows for future improvements
     print(f"Beginning crawl for subreddit {url}")
-    # headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
 
-    """
-        Issues with each headless, debugging by trying a few options
-    """
-    # user_data_dir = None
-    # edge_options = Options()
-    # edge_options.add_argument("--headless")
-    # edge_options.add_argument("--incognito")
-    # edge_options.add_argument("--no-sandbox")
-    # edge_options.add_argument("--disable-dev-shm-usage")
-    # edge_options.add_argument("--window-size=1920x1080")
-    # edge_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0")
-
-    # firefox_options = Options()
-    # firefox_options.add_argument("-headless")
-    # firefox_options.add_argument("--window-size=1920,1080")
-    # firefox_options.set_preference("general.useragent.override", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/125.0")
-
+    # Issues with each headless, debugging by trying a few options
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--window-size=1920x1080")
@@ -70,20 +51,14 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
     driver = None
 
     try:
-        # service = Service(EdgeChromiumDriverManager().install())
-        # driver = webdriver.Edge(service=service, options=edge_options)
-
-        # service = Service(executable_path=GeckoDriverManager().install())
-        # driver = webdriver.Firefox(service=service, options=firefox_options)
-
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
 
-        driver.set_page_load_timeout(60)
+        driver.set_page_load_timeout(90)
         driver.get(url)
 
         # Wait until at least one 'shreddit-post' element is present
-        WebDriverWait(driver, 30).until(
+        WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.TAG_NAME, "shreddit-post"))
         )
         print("At least one 'shreddit-post' element found. Starting crawl loop.")
@@ -98,7 +73,7 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
             print(f"Attempt {attempts}/{max_attempts}")
 
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(10)
+            time.sleep(20)
 
             current_height = driver.execute_script("return document.body.scrollHeight")
             if current_height == height:
@@ -122,8 +97,20 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
                     post_score_str = post_element.get('score')
 
                     media_content = None
-                    if href_content and (href_content.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm')) or 'v.redd.it' in href_content):
-                        media_content = href_content
+
+
+                    if href_content:
+                        parsed = urllib.parse.urlparse(href_content)
+                        path_extension = os.path.splitext(href_content)[1].lower()
+                        images = ('.jpg', '.jpeg', '.png', '.gif', '.webp')
+                        videos = ('.mp4', '.webm')
+                        if path_extension in images or path_extension in videos:
+                            media_content = href_content
+                        elif 'v.redd.it' in href_content:
+                            media_content = href_content
+
+                    # if href_content and (href_content.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm')) or 'v.redd.it' in href_content):
+                    #     media_content = href_content
 
                     if unique_id and perma_link and post_title and post_author:
                         crawled_posts.append(Post(
@@ -149,13 +136,13 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
 
     # Error handling
     except TimeoutException:
-        print("Timeout error")
+        print("ERROR: Timeout error")
         return []
     except WebDriverException as e:
-        print(f"Web Driver error: {e} ")
+        print(f"ERROR: Web Driver error: {e} ")
         return []
     except Exception as e:
-        print("Unexpected error:", e)
+        print("ERROR: Unexpected error:", e)
         return []
     finally:
         if driver:
