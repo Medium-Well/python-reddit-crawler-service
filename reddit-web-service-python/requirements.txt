@@ -1,8 +1,0 @@
-flask
-requests
-beautifulsoup4
-dataclasses
-webdriver-manager
-selenium
-Flask-SQLAlchemy
-SQLAlchemy
