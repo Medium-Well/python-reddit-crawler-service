@@ -35,13 +35,13 @@ class Post:
 # Main crawling function - takes in parameters such as subreddit name, sort by and how many to crawl
 def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Post]:
     """
-        Crawls a subreddit of your choice with a set target of 20 posts to crawl
-        these posts are then saved as a Post dataclass
+        Crawls a subreddit of your choice with a set target of posts to crawl
+        these posts are created as a Post dataclass before database entry and commit
     """
     url = f"https://www.reddit.com/r/{subreddit}/{sort}" # allows for future improvements
     print(f"Beginning crawl for subreddit {url}")
 
-    # Issues with each headless, debugging by trying a few options
+    # Settings for Chrome web engine
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--window-size=1920x1080")
@@ -86,6 +86,7 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
             html_posts = soupy.find_all('shreddit-post')
             print(f"Crawled {len(html_posts)} posts")
 
+            # Iterates through the elements under shreddit-post to find the attributes we need
             for post_element in html_posts:
                 unique_id = post_element.get('id')
                 if unique_id and unique_id not in unique_ids: # Prevent duplicate post saving
@@ -96,12 +97,11 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
                     post_author = post_element.get('author')
                     post_score_str = post_element.get('score')
 
+                    # Parses and checks for media content
                     media_content = None
-
-
                     if href_content:
                         parsed = urllib.parse.urlparse(href_content)
-                        path_extension = os.path.splitext(href_content)[1].lower()
+                        path_extension = os.path.splitext(parsed.path)[1].lower()
                         images = ('.jpg', '.jpeg', '.png', '.gif', '.webp')
                         videos = ('.mp4', '.webm')
                         if path_extension in images or path_extension in videos:
@@ -109,9 +109,7 @@ def crawl_subreddit(subreddit: str, sort: str , target_posts : int ) -> list[Pos
                         elif 'v.redd.it' in href_content:
                             media_content = href_content
 
-                    # if href_content and (href_content.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm')) or 'v.redd.it' in href_content):
-                    #     media_content = href_content
-
+                    # Ensures that the important data fields are present
                     if unique_id and perma_link and post_title and post_author:
                         crawled_posts.append(Post(
                             unique_id=unique_id,
