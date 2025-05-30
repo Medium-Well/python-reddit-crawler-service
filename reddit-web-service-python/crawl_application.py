@@ -205,7 +205,7 @@ async def crawl():
 
     # Report variables
     report_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d-%H%M%S')
-    report_file = f"report_{subreddit}_{sort}_{report_timestamp}.pdf"
+    report_file = f"report_{subreddit}_{sort}_{report_timestamp}.html"
     report_path = os.path.join(report_directory, report_file)
 
     # Pushing new data to SQLite Database
@@ -268,7 +268,7 @@ async def crawl():
                         chat_id = registered.chat_id,
                         document = f,
                         filename = os.path.basename(report_file),
-                        caption = f"Here is the {target_posts} post PDF report for r/{subreddit}/{sort}"
+                        caption = f"Here is the {target_posts} post HTML report for r/{subreddit}/{sort}"
                     )
                 print(f'Sent {report_file} successfully to {user_handle}')
             else:
@@ -283,7 +283,7 @@ async def crawl():
 
 # ----------------------------------------------------------------------------------------- #
 
-# For the static PDF report file
+# For the static HTML report file
 @app.route('/report/<path:filename>')
 async def report(filename):
     return send_from_directory(report_directory, filename)
@@ -408,7 +408,7 @@ def generate_html(report_id):
     report_file = report.filename
     report_path = os.path.join(report_directory, report_file)
 
-    if report.sort == 'new':report_posts.sort(key=lambda p: p.crawled_at, reverse=True)
+    if report.sort == 'new':report_posts.sort(key=lambda p: p.timestamp, reverse=True)
     else: report_posts.sort(key=lambda p: p.post_score, reverse=True)
 
     # Generating and saving HTML Report
